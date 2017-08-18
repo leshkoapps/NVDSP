@@ -20,9 +20,12 @@
 
     float omega, omegaS, omegaC, alpha;
  
-    float coefficients[5];
+    float realTimeCoeffs[5];
+    float userCoeffs[5];
  
     float a0, a1, a2, b0, b1, b2;
+    
+    int coeffsCopied;
 }
 
 - (id) initWithSamplingRate:(float)sr;

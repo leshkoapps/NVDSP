@@ -9,6 +9,7 @@
 //
 
 #import "NVDSP.h"
+#include <libkern/OSAtomic.h>
 
 #define MAX_CHANNEL_COUNT 2
 
@@ -19,7 +20,7 @@
         samplingRate = sr;
 
         for (int i = 0; i < 5; i++) {
-            coefficients[i] = 0.0f;
+            userCoeffs[i] = 0.0f;
         }
 
         for (int i = 0; i < MAX_CHANNEL_COUNT; i++) {
@@ -47,11 +48,12 @@
 
 - (void) setCoefficients {
     // // { b0/a0, b1/a0, b2/a0, a1/a0, a2/a0 }
-    coefficients[0] = b0;
-    coefficients[1] = b1;
-    coefficients[2] = b2;
-    coefficients[3] = a1;
-    coefficients[4] = a2;
+    userCoeffs[0] = b0;
+    userCoeffs[1] = b1;
+    userCoeffs[2] = b2;
+    userCoeffs[3] = a1;
+    userCoeffs[4] = a2;
+    coeffsCopied = 0;
 
     [self stabilityWarning];
 }
@@ -65,6 +67,12 @@
 
 - (void) filterContiguousData: (float *)data numFrames:(UInt32)numFrames channel:(UInt32)channel {
 
+    if (OSAtomicCompareAndSwap32(0, 1, &coeffsCopied)){
+        for (int i = 0; i < 5; i++) {
+            realTimeCoeffs[i] = userCoeffs[i];
+        }
+    }
+    
     // Provide buffer for processing
     float tInputBuffer[numFrames + 2];
     float tOutputBuffer[numFrames + 2];
@@ -75,7 +83,7 @@
     memcpy(&(tInputBuffer[2]), data, numFrames * sizeof(float));
 
     // Do the processing
-    vDSP_deq22(tInputBuffer, 1, coefficients, tOutputBuffer, 1, numFrames);
+    vDSP_deq22(tInputBuffer, 1, realTimeCoeffs, tOutputBuffer, 1, numFrames);
 
     // Copy the data
     memcpy(data, tOutputBuffer + 2, numFrames * sizeof(float));
