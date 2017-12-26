@@ -10,6 +10,8 @@
 #import <Foundation/Foundation.h>
 #import <Accelerate/Accelerate.h>
 
+#define MAX_CHANNEL_COUNT 2
+
 @interface NVDSP : NSObject {
     float zero, one;
 
@@ -21,11 +23,14 @@
     float omega, omegaS, omegaC, alpha;
  
     float realTimeCoeffs[5];
-    float userCoeffs[5];
  
     float a0, a1, a2, b0, b1, b2;
     
     int coeffsCopied;
+    
+@public
+    float userCoeffs[5];
+    
 }
 
 - (id) initWithSamplingRate:(float)sr;
@@ -52,3 +57,7 @@
 - (void) stabilityWarning;
 
 @end
+
+void c_filterContiguousData(float *data, UInt32 numFrames, UInt32 channel,float realTimeCoeffs[5],float *gInputKeepBuffer[2],float *gOutputKeepBuffer[2]);
+
+
