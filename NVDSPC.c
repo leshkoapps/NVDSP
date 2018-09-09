@@ -10,30 +10,31 @@
 #include <libkern/OSAtomic.h>
 #include <Accelerate/Accelerate.h>
 
-/*
-- (void)filterData:(float *)data numFrames:(UInt32)numFrames numChannels:(UInt32)numChannels {
-    switch (numChannels) {
-        case 1:
-            [self filterContiguousData:data numFrames:numFrames channel:0];
-            break;
-        case 2: {
-            float left[numFrames + 2];
-            float right[numFrames + 2];
-            
-            [self deinterleave:data left:left right:right length:numFrames];
-            [self filterContiguousData:left numFrames:numFrames channel:0];
-            [self filterContiguousData:right numFrames:numFrames channel:1];
-            [self interleave:data left:left right:right length:numFrames];
-            
-            break;
-        }
-        default:
-            NSLog(@"WARNING: Unsupported number of channels %u", (unsigned int)numChannels);
-            break;
+void c_interleave(float *data,float *left,float *right,vDSP_Length length) {
+    float zero = 0.0f;
+    vDSP_vsadd(left, 1, &zero, data, 2, length);
+    vDSP_vsadd(right, 1, &zero, data+1, 2, length);
+}
+
+void c_deinterleave(float *data, float *left, float *right, vDSP_Length length) {
+    float zero = 0.0f;
+    vDSP_vsadd(data, 2, &zero, left, 1, length);
+    vDSP_vsadd(data+1, 2, &zero, right, 1, length);
+}
+
+void c_filterData(float *data, unsigned int numFrames, unsigned int numChannels, float realTimeCoeffs[5], float *gInputKeepBuffer[2], float *gOutputKeepBuffer[2]){
+    if(numChannels==1){
+        c_filterContiguousData(data, numFrames, 0, realTimeCoeffs, gInputKeepBuffer, gOutputKeepBuffer);
+    }
+    else if(numChannels==2){
+        float left[numFrames + 2];
+        float right[numFrames + 2];
+        c_deinterleave(data, left, right, numFrames);
+        c_filterContiguousData(left, numFrames, 0, realTimeCoeffs, gInputKeepBuffer, gOutputKeepBuffer);
+        c_filterContiguousData(right, numFrames, 1, realTimeCoeffs, gInputKeepBuffer, gOutputKeepBuffer);
+        c_interleave(data,left,right,numFrames);
     }
 }
-*/
-
 
 void c_filterContiguousData(float *data, unsigned int numFrames, unsigned int channel,float realTimeCoeffs[5],float *gInputKeepBuffer[2],float *gOutputKeepBuffer[2]){
     
