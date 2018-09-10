@@ -9,6 +9,10 @@
 #include "NVDSPC.h"
 #include <libkern/OSAtomic.h>
 #include <Accelerate/Accelerate.h>
+#include <stdio.h>
+#include <string.h>
+
+
 
 void c_interleave(float *data,float *left,float *right,vDSP_Length length) {
     float zero = 0.0f;
