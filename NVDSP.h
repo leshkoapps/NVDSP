@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 #import <Accelerate/Accelerate.h>
 
-
 #define MAX_CHANNEL_COUNT 2
 
 @interface NVDSP : NSObject {
